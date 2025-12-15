@@ -3,11 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogOut, User, LayoutDashboard, Plane, Hotel, Users, Settings } from 'lucide-react';
+import api from '@/lib/axios';
 
 export default function Dashboard() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem('admin_token');
@@ -26,6 +29,29 @@ export default function Dashboard() {
       setLoading(false);
     }
   }, [router]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await api.get('/admin/dashboard/stats');
+        setStats(response.data);
+      } catch (err) {
+        console.error('Failed to fetch stats:', err);
+        // Fallback to zero if API fails
+        setStats({
+          users: { total: 0 },
+          bookings: { total: 0 },
+          revenue: { total: 0 }
+        });
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchStats();
+    }
+  }, [user]);
 
   const handleLogout = () => {
     localStorage.removeItem('admin_token');
@@ -105,26 +131,26 @@ export default function Dashboard() {
               <h3 className="text-gray-400">Total Users</h3>
               <Users className="text-blue-500" size={24} />
             </div>
-            <p className="text-3xl font-bold">1,234</p>
-            <p className="text-sm text-green-400 mt-2">+12% from last month</p>
+            <p className="text-3xl font-bold">{statsLoading ? '...' : stats?.users?.total || 0}</p>
+            <p className="text-sm text-green-400 mt-2">Registered Users</p>
           </div>
           
           <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-gray-400">Active Bookings</h3>
+              <h3 className="text-gray-400">Total Bookings</h3>
               <Plane className="text-purple-500" size={24} />
             </div>
-            <p className="text-3xl font-bold">56</p>
-            <p className="text-sm text-green-400 mt-2">+5 new today</p>
+            <p className="text-3xl font-bold">{statsLoading ? '...' : stats?.bookings?.total || 0}</p>
+            <p className="text-sm text-green-400 mt-2">Flights & Hotels</p>
           </div>
 
           <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-gray-400">Revenue</h3>
+              <h3 className="text-gray-400">Total Revenue</h3>
               <span className="text-green-500 font-bold">$</span>
             </div>
-            <p className="text-3xl font-bold">$45,678</p>
-            <p className="text-sm text-green-400 mt-2">+8% from last month</p>
+            <p className="text-3xl font-bold">${statsLoading ? '...' : (stats?.revenue?.total || 0).toLocaleString()}</p>
+            <p className="text-sm text-green-400 mt-2">Confirmed Transactions</p>
           </div>
         </div>
 
