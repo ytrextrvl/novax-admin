@@ -44,6 +44,35 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
+
+    // Auto-logout logic
+    let timeoutId: NodeJS.Timeout;
+
+    const resetTimer = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        handleLogout();
+      }, 10 * 60 * 1000); // 10 minutes
+    };
+
+    // Events to monitor for activity
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+    
+    // Attach listeners
+    events.forEach(event => {
+      document.addEventListener(event, resetTimer);
+    });
+
+    // Initial timer start
+    resetTimer();
+
+    // Cleanup
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      events.forEach(event => {
+        document.removeEventListener(event, resetTimer);
+      });
+    };
   }, [router]);
 
   useEffect(() => {
