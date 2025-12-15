@@ -119,7 +119,7 @@ export default function Dashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-8">
+      <main className="flex-1 p-8 relative">
         <header className="mb-8">
           <h2 className="text-3xl font-bold">Dashboard Overview</h2>
           <p className="text-gray-400 mt-1">Welcome back, {user?.first_name}!</p>
@@ -162,6 +162,10 @@ export default function Dashboard() {
             No recent activity to display.
           </div>
         </div>
+        
+        <footer className="mt-8 text-center text-xs text-gray-600">
+          Novax Admin Panel v1.0.0 (Stable) • Connected to API
+        </footer>
       </main>
     </div>
   );
