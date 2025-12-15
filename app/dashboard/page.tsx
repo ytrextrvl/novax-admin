@@ -159,7 +159,10 @@ export default function Dashboard() {
               
               <div className="px-4 py-2 mt-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">System</div>
               <NavItem icon={<CreditCard size={20} />} label="Payments" />
-              <NavItem icon={<Settings size={20} />} label="Settings" />
+              
+              <div className="px-4 py-2 mt-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Administration</div>
+              <NavItem icon={<Users size={20} />} label="Team" href="/dashboard/team" />
+              <NavItem icon={<Settings size={20} />} label="Settings" href="/dashboard/settings" />
             </nav>
 
             <div className="p-4 border-t border-slate-800 bg-slate-900/50">
@@ -280,10 +283,10 @@ export default function Dashboard() {
   );
 }
 
-function NavItem({ icon, label, active = false }: { icon: any, label: string, active?: boolean }) {
+function NavItem({ icon, label, active = false, href = "#" }: { icon: any, label: string, active?: boolean, href?: string }) {
   return (
     <a 
-      href="#" 
+      href={href} 
       className={`
         flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group
         ${active 
