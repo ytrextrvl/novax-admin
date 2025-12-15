@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import AICopilot from '@/components/dashboard/AICopilot';
 import { 
   LogOut, 
   User, 
@@ -279,6 +280,7 @@ export default function Dashboard() {
           </footer>
         </main>
       </div>
+      <AICopilot />
     </div>
   );
 }
