@@ -88,3 +88,7 @@ pnpm start
 ---
 
 > **آخر تحديث:** 2025-12-19
+
+## Design System
+This Admin **consumes Design Tokens from SSOT**:
+https://github.com/ytrextrvl/novax-assets
