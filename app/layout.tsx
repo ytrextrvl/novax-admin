@@ -19,6 +19,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} bg-background text-navy`}>
+      {/* NOVAX_BRAND_HEADER */}
+      <header style={{position:"sticky",top:0,zIndex:50,background:"#ffffff",borderBottom:"1px solid rgba(0,0,0,.08)"}}>
+        <div style={{maxWidth:1200,margin:"0 auto",padding:"12px 16px",display:"flex",alignItems:"center",gap:12}}>
+          <a href="/" style={{display:"inline-flex",alignItems:"center",gap:10,textDecoration:"none"}}>
+            <img src="/brand/svg/novax_logo_primary_dark.svg" alt="NOVAX" style={{height:28,width:"auto"}}
+              onError={(e)=>{e.currentTarget.onerror=null; e.currentTarget.src="/brand/svg/novax_logo_primary.svg";}} />
+          </a>
+        </div>
+      </header>
+
         <div className="flex h-screen overflow-hidden">
           <Sidebar />
           <div className="flex-1 flex flex-col overflow-hidden">
