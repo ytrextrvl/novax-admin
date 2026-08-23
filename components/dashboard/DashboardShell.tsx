@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import api from '@/lib/axios';
 import { LayoutDashboard, CalendarDays, Users, Settings, LogOut, Plane, Menu, X } from 'lucide-react';
 
 const nav = [
@@ -15,25 +16,16 @@ const nav = [
 export default function DashboardShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [ready, setReady] = useState(false);
   const [open, setOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
-  useEffect(() => {
-    const token = localStorage.getItem('admin_token');
-    if (!token) {
-      router.replace('/');
-      return;
-    }
-    setReady(true);
-  }, [router]);
-
-  const logout = () => {
-    localStorage.removeItem('admin_token');
-    localStorage.removeItem('admin_user');
+  const logout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try { await api.post('/auth/logout'); } catch { /* cookie expires client-side on next auth check */ }
     router.replace('/');
+    router.refresh();
   };
-
-  if (!ready) return <div className="min-h-screen grid place-items-center bg-slate-950 text-white">جاري التحقق...</div>;
 
   return (
     <div className="min-h-screen bg-[#f4f7f8] text-slate-900">
@@ -54,13 +46,13 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             })}
           </nav>
           <div className="p-4 border-t border-white/10">
-            <button onClick={logout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-300 hover:bg-red-500/10 hover:text-red-300"><LogOut size={18}/>تسجيل الخروج</button>
+            <button disabled={loggingOut} onClick={logout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-300 hover:bg-red-500/10 hover:text-red-300 disabled:opacity-50"><LogOut size={18}/>{loggingOut ? 'جاري الخروج...' : 'تسجيل الخروج'}</button>
           </div>
         </aside>
         <main className="flex-1 min-w-0">
           <div className="h-20 px-5 md:px-8 bg-white border-b border-slate-200 flex items-center justify-between">
             <div><p className="m-0 text-xs text-slate-400 font-bold">NOVAX TRAVEL</p><h1 className="m-0 mt-1 text-lg font-black">مركز الإدارة</h1></div>
-            <span className="inline-flex items-center gap-2 text-xs font-bold text-teal-700 bg-teal-50 border border-teal-100 px-3 py-2 rounded-full"><span className="w-2 h-2 rounded-full bg-teal-500"/>النظام متصل</span>
+            <span className="inline-flex items-center gap-2 text-xs font-bold text-teal-700 bg-teal-50 border border-teal-100 px-3 py-2 rounded-full"><span className="w-2 h-2 rounded-full bg-teal-500"/>جلسة آمنة</span>
           </div>
           <div className="p-4 md:p-8 max-w-[1500px] mx-auto">{children}</div>
         </main>

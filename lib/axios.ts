@@ -1,20 +1,11 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://api.novaxtravel.com/api',
+  baseURL: '/api',
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
-});
-
-api.interceptors.request.use((config) => {
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('admin_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  }
-  return config;
 });
 
 export default api;

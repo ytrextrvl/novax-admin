@@ -26,20 +26,21 @@ export default function SettingsPage() {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const current_password = String(form.get('current_password') || '');
-    const password = String(form.get('password') || '');
+    const new_password = String(form.get('new_password') || '');
     const password_confirmation = String(form.get('password_confirmation') || '');
-    if (password !== password_confirmation) {
+    if (new_password !== password_confirmation) {
       setPasswordMessage({ok:false,text:'كلمتا المرور الجديدتان غير متطابقتين.'});
       return;
     }
     setSavingPassword(true);
     setPasswordMessage(null);
     try {
-      await api.post('/auth/password/change', { current_password, password, password_confirmation });
+      await api.post('/auth/password', { current_password, new_password });
       setPasswordMessage({ok:true,text:'تم تغيير كلمة المرور بنجاح.'});
       event.currentTarget.reset();
     } catch (error:any) {
-      setPasswordMessage({ok:false,text:error?.response?.data?.message || 'تعذر تغيير كلمة المرور. تحقق من كلمة المرور الحالية.'});
+      const code = error?.response?.data?.error;
+      setPasswordMessage({ok:false,text:code === 'CURRENT_PASSWORD_INVALID' ? 'كلمة المرور الحالية غير صحيحة.' : code === 'PASSWORD_TOO_WEAK' ? 'استخدم كلمة مرور لا تقل عن 12 حرفًا.' : 'تعذر تغيير كلمة المرور.'});
     } finally {
       setSavingPassword(false);
     }
@@ -65,7 +66,7 @@ export default function SettingsPage() {
         <div className="flex items-start gap-3 mb-5"><span className="w-11 h-11 rounded-xl bg-slate-100 text-slate-700 grid place-items-center"><LockKeyhole size={21}/></span><div><h3 className="text-lg font-black m-0">تغيير كلمة المرور</h3><p className="text-xs text-slate-400 mt-1 mb-0">غيّر كلمة المرور المؤقتة فور أول دخول.</p></div></div>
         <form onSubmit={changePassword} className="grid md:grid-cols-3 gap-3">
           <input name="current_password" type="password" autoComplete="current-password" required placeholder="كلمة المرور الحالية" className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10"/>
-          <input name="password" type="password" autoComplete="new-password" minLength={12} required placeholder="كلمة المرور الجديدة" className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10"/>
+          <input name="new_password" type="password" autoComplete="new-password" minLength={12} required placeholder="كلمة المرور الجديدة" className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10"/>
           <input name="password_confirmation" type="password" autoComplete="new-password" minLength={12} required placeholder="تأكيد كلمة المرور الجديدة" className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10"/>
           <div className="md:col-span-3 flex flex-col sm:flex-row sm:items-center gap-3"><button disabled={savingPassword} className="rounded-xl bg-[#0aa68f] text-white px-5 py-3 text-sm font-black disabled:opacity-50">{savingPassword ? 'جاري التغيير...' : 'حفظ كلمة المرور الجديدة'}</button>{passwordMessage && <span className={`text-xs font-bold ${passwordMessage.ok ? 'text-emerald-700' : 'text-red-600'}`}>{passwordMessage.text}</span>}</div>
         </form>
@@ -74,8 +75,8 @@ export default function SettingsPage() {
       <section className="bg-[#071d28] text-white rounded-2xl p-6">
         <div className="grid sm:grid-cols-3 gap-5">
           <div className="flex gap-3"><ShieldCheck className="text-teal-400 shrink-0"/><div><strong className="text-sm">الأسرار محمية</strong><p className="text-xs leading-6 text-slate-400 m-0 mt-1">لا تظهر مفاتيح API في لوحة التحكم.</p></div></div>
-          <div className="flex gap-3"><Database className="text-teal-400 shrink-0"/><div><strong className="text-sm">قاعدة البيانات</strong><p className="text-xs leading-6 text-slate-400 m-0 mt-1">الاتصال يدار من الخادم فقط.</p></div></div>
-          <div className="flex gap-3"><KeyRound className="text-teal-400 shrink-0"/><div><strong className="text-sm">التفعيل لاحقًا</strong><p className="text-xs leading-6 text-slate-400 m-0 mt-1">إضافة Token وMarker ثم تفعيل المزود.</p></div></div>
+          <div className="flex gap-3"><Database className="text-teal-400 shrink-0"/><div><strong className="text-sm">قاعدة البيانات</strong><p className="text-xs leading-6 text-slate-400 m-0 mt-1">الاتصال يدار من Vercel Functions فقط.</p></div></div>
+          <div className="flex gap-3"><KeyRound className="text-teal-400 shrink-0"/><div><strong className="text-sm">Travelpayouts لاحقًا</strong><p className="text-xs leading-6 text-slate-400 m-0 mt-1">إضافة Token وMarker ثم تفعيل المزود بدون إعادة بناء رحلة العميل.</p></div></div>
         </div>
       </section>
       <div className="flex items-center gap-2 text-xs text-slate-400"><CheckCircle2 size={15} className="text-teal-600"/>إعدادات الإنتاج الحساسة تُدار عبر Environment Variables فقط.</div>
