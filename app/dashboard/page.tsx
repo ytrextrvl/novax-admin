@@ -1,72 +1,48 @@
-import { Users, Calendar, CreditCard, TrendingUp } from 'lucide-react';
+'use client';
+
+import { useEffect, useState } from 'react';
+import api from '@/lib/axios';
+import { CalendarDays, Car, Hotel, Plane, Server, ShieldCheck } from 'lucide-react';
 
 export default function Dashboard() {
+  const [apiState, setApiState] = useState<'checking'|'online'|'offline'>('checking');
+  const [provider, setProvider] = useState('manual');
+
+  useEffect(() => {
+    Promise.allSettled([
+      api.get('/health'),
+      api.get('/travel/providers/status'),
+    ]).then(([health, providers]) => {
+      setApiState(health.status === 'fulfilled' ? 'online' : 'offline');
+      if (providers.status === 'fulfilled') setProvider(providers.value.data?.default_provider || 'manual');
+    });
+  }, []);
+
+  const cards = [
+    { title: 'الطيران', value: 'جاهز للطلبات', icon: Plane },
+    { title: 'الفنادق', value: 'جاهز للطلبات', icon: Hotel },
+    { title: 'السيارات', value: 'جاهز للطلبات', icon: Car },
+    { title: 'مزود السفر', value: provider === 'manual' ? 'يدوي حاليًا' : provider, icon: Server },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-navy">Dashboard Overview</h1>
-        <div className="text-sm text-slate-500">Last updated: Just now</div>
+    <div className="space-y-7">
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+        <div><p className="text-xs font-black text-teal-600 m-0">OPERATIONS</p><h2 className="text-3xl font-black text-slate-950 mt-1 mb-1">نظرة عامة</h2><p className="text-sm text-slate-500 m-0">مركز تشغيل خدمات NOVAX Travel.</p></div>
+        <div className={`inline-flex items-center gap-2 self-start rounded-full px-3 py-2 text-xs font-black border ${apiState === 'online' ? 'text-emerald-700 bg-emerald-50 border-emerald-100' : apiState === 'offline' ? 'text-amber-700 bg-amber-50 border-amber-100' : 'text-slate-600 bg-slate-50 border-slate-200'}`}><span className={`w-2 h-2 rounded-full ${apiState === 'online' ? 'bg-emerald-500' : apiState === 'offline' ? 'bg-amber-500' : 'bg-slate-400'}`}/>{apiState === 'online' ? 'API متصل' : apiState === 'offline' ? 'API يحتاج ربط' : 'فحص الاتصال...'}</div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <KPICard 
-          title="Total Users" 
-          value="1,234" 
-          trend="+12%" 
-          icon={<Users className="text-primary" size={24} />} 
-        />
-        <KPICard 
-          title="Total Bookings" 
-          value="856" 
-          trend="+5%" 
-          icon={<Calendar className="text-secondary" size={24} />} 
-        />
-        <KPICard 
-          title="Revenue" 
-          value="$45,231" 
-          trend="+8%" 
-          icon={<CreditCard className="text-blue-500" size={24} />} 
-        />
-        <KPICard 
-          title="Active Agents" 
-          value="42" 
-          trend="+2%" 
-          icon={<TrendingUp className="text-emerald-500" size={24} />} 
-        />
+      <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        {cards.map(({title,value,icon:Icon}) => <div key={title} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm"><div className="w-11 h-11 rounded-xl bg-teal-50 text-teal-600 grid place-items-center mb-5"><Icon size={22}/></div><p className="text-xs font-bold text-slate-400 m-0">{title}</p><strong className="block text-lg text-slate-900 mt-1">{value}</strong></div>)}
       </div>
 
-      <div className="bg-white rounded-2xl border border-border p-6 shadow-novax">
-        <h3 className="text-lg font-bold text-navy mb-4">Recent Activity</h3>
-        <div className="space-y-4">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
-                  <Users size={18} />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-navy">New user registration</p>
-                  <p className="text-xs text-slate-500">2 minutes ago</p>
-                </div>
-              </div>
-              <span className="text-xs font-medium px-2 py-1 bg-green-100 text-green-700 rounded-full">Completed</span>
-            </div>
-          ))}
-        </div>
+      <div className="grid lg:grid-cols-[1.4fr_.6fr] gap-4">
+        <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-5"><div><h3 className="font-black text-lg m-0">دورة الحجز</h3><p className="text-xs text-slate-400 mt-1 mb-0">العملية المعتمدة لكل الخدمات</p></div><CalendarDays className="text-teal-600"/></div>
+          <div className="grid md:grid-cols-4 gap-3">{['طلب جديد','مراجعة وعرض','دفع وتأكيد','إكمال الحجز'].map((x,i)=><div key={x} className="rounded-xl bg-slate-50 border border-slate-100 p-4"><span className="text-[10px] text-teal-600 font-black">0{i+1}</span><p className="font-black text-sm mt-2 mb-0">{x}</p></div>)}</div>
+        </section>
+        <section className="bg-[#071d28] text-white rounded-2xl p-6 shadow-sm"><ShieldCheck className="text-teal-400 mb-5" size={30}/><h3 className="text-lg font-black m-0">Travelpayouts جاهز</h3><p className="text-xs leading-6 text-slate-300 mt-2 mb-0">يبقى معطلاً بأمان حتى توفر API Token وMarker. نظام الطلبات يعمل يدويًا الآن دون بيانات وهمية.</p></section>
       </div>
-    </div>
-  );
-}
-
-function KPICard({ title, value, trend, icon }: { title: string, value: string, trend: string, icon: React.ReactNode }) {
-  return (
-    <div className="bg-white p-6 rounded-2xl border border-border shadow-novax">
-      <div className="flex items-center justify-between mb-4">
-        <div className="p-3 bg-slate-50 rounded-xl">{icon}</div>
-        <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">{trend}</span>
-      </div>
-      <h3 className="text-slate-500 text-sm font-medium">{title}</h3>
-      <p className="text-2xl font-bold text-navy mt-1">{value}</p>
     </div>
   );
 }
