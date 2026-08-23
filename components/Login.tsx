@@ -13,7 +13,7 @@ export default function Login() {
   const router = useRouter();
 
   useEffect(() => {
-    if (localStorage.getItem('admin_token')) router.replace('/dashboard');
+    api.get('/auth/me').then(() => router.replace('/dashboard')).catch(() => undefined);
   }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -21,15 +21,15 @@ export default function Login() {
     setLoading(true);
     setError('');
     try {
-      const response = await api.post('/admin/auth/login', { email, password });
-      const roles = response.data?.user?.roles || [];
-      if (!roles.includes('admin')) throw new Error('ADMIN_REQUIRED');
-      localStorage.setItem('admin_token', response.data.access_token);
-      localStorage.setItem('admin_user', JSON.stringify(response.data.user));
+      await api.post('/auth/login', { email, password });
       router.replace('/dashboard');
+      router.refresh();
     } catch (err: any) {
-      if (err?.message === 'ADMIN_REQUIRED') setError('هذا الحساب لا يملك صلاحية الإدارة.');
-      else setError(err.response?.data?.message || err.response?.data?.error || 'تعذر تسجيل الدخول. تحقق من البريد وكلمة المرور.');
+      if (err?.response?.status === 503) {
+        setError('الربط الآمن بقاعدة البيانات لم يُفعّل على Vercel بعد.');
+      } else {
+        setError('البريد الإلكتروني أو كلمة المرور غير صحيحة.');
+      }
     } finally {
       setLoading(false);
     }
@@ -56,7 +56,7 @@ export default function Login() {
             <label className="block"><span className="block text-xs font-black text-slate-700 mb-2">كلمة المرور</span><div className="relative"><LockKeyhole className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={18}/><input type="password" required autoComplete="current-password" className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3.5 pr-11 pl-4 text-sm outline-none transition focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-500/10" placeholder="••••••••••••" value={password} onChange={e => setPassword(e.target.value)}/></div></label>
             <button type="submit" disabled={loading} className="w-full rounded-xl bg-[#0aa68f] hover:bg-[#078d7a] text-white py-3.5 px-4 font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-teal-600/15 transition disabled:opacity-50">{loading ? 'جاري التحقق...' : <>دخول لوحة الإدارة <ArrowLeft size={18}/></>}</button>
           </form>
-          <div className="mt-8 flex items-center justify-center gap-2 text-[11px] text-slate-400"><ShieldCheck size={15}/>هذه الصفحة مخصصة للإدارة المصرح لها فقط.</div>
+          <div className="mt-8 flex items-center justify-center gap-2 text-[11px] text-slate-400"><ShieldCheck size={15}/>الجلسة الإدارية محفوظة في Cookie آمن ولا تُخزن في Local Storage.</div>
         </div>
       </section>
     </main>
