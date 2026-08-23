@@ -47,11 +47,11 @@ export async function POST(request: Request) {
       user: { id: user.id, name: user.name, email: user.email, roles: ['admin'] },
     });
 
-    response.cookies.set(ADMIN_COOKIE, createAdminSession(user.id, user.email), adminCookieOptions());
+    response.cookies.set(ADMIN_COOKIE, createAdminSession(user.id, user.email, user.password), adminCookieOptions());
     return response;
   } catch (error) {
     const code = error instanceof Error ? error.message : 'UNKNOWN';
-    if (code === 'DATABASE_URL_MISSING' || code === 'ADMIN_SESSION_SECRET_MISSING') {
+    if (code === 'DATABASE_URL_MISSING') {
       return NextResponse.json({ error: 'SERVER_CONFIGURATION_PENDING' }, { status: 503 });
     }
     console.error('admin_login_failed', error);
