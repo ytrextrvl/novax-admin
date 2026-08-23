@@ -8,9 +8,8 @@ export async function GET() {
     ok: true,
     service: 'novax-admin-api',
     database_configured: Boolean(process.env.DATABASE_URL),
-    session_secret_configured: Boolean(process.env.ADMIN_SESSION_SECRET),
     booking_mode: 'manual-first',
-    travelpayouts: 'ready-not-configured',
+    travelpayouts: process.env.TRAVELPAYOUTS_ENABLED === 'true' ? 'enabled' : 'ready-not-configured',
     timestamp: new Date().toISOString(),
   });
 }
