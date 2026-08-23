@@ -1,289 +1,48 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
-import { Loader2, Save, Globe, CreditCard, Building2, Plane, Key } from "lucide-react";
-import { toast } from "sonner";
+import { useEffect, useState } from 'react';
+import api from '@/lib/axios';
+import { CheckCircle2, Database, Globe2, KeyRound, Plane, ShieldCheck } from 'lucide-react';
 
-interface Setting {
-  key: string;
-  value: string;
-  type: string;
-  group: string;
-  description: string;
-}
+type ProviderState = {
+  default_provider?: string;
+  providers?: {
+    manual?: { enabled?: boolean; mode?: string };
+    travelpayouts?: { enabled?: boolean; configured?: boolean; mode?: string };
+  };
+};
 
 export default function SettingsPage() {
+  const [data, setData] = useState<ProviderState | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [settings, setSettings] = useState<Record<string, Setting[]>>({});
 
-  // Fetch settings on mount
   useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const token = localStorage.getItem('admin_token');
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/settings`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          setSettings(data.data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch settings:', error);
-        toast.error('Failed to load settings');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSettings();
+    api.get('/travel/providers/status').then(r => setData(r.data)).catch(() => setData(null)).finally(() => setLoading(false));
   }, []);
 
-  const handleSave = async (group: string) => {
-    setSaving(true);
-    try {
-      const token = localStorage.getItem('admin_token');
-      const groupSettings = settings[group];
-      
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/settings`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          settings: groupSettings
-        })
-      });
-
-      if (response.ok) {
-        toast.success('Settings saved successfully');
-      } else {
-        throw new Error('Failed to save');
-      }
-    } catch (error) {
-      toast.error('Failed to save settings');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const updateSettingValue = (group: string, key: string, value: string) => {
-    setSettings(prev => ({
-      ...prev,
-      [group]: prev[group].map(s => s.key === key ? { ...s, value } : s)
-    }));
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  const tp = data?.providers?.travelpayouts;
 
   return (
-    <div className="space-y-6 p-6 pb-16">
-      <div className="space-y-0.5">
-        <h2 className="text-2xl font-bold tracking-tight">System Settings</h2>
-        <p className="text-muted-foreground">
-          Manage your platform configuration, API integrations, and branding.
-        </p>
+    <div className="space-y-7">
+      <div><p className="text-xs font-black text-teal-600 m-0">SETTINGS</p><h2 className="text-3xl font-black text-slate-950 mt-1 mb-1">إعدادات المنصة</h2><p className="text-sm text-slate-500 m-0">حالة التكاملات الأساسية بدون إظهار أي مفاتيح سرية.</p></div>
+      <div className="grid md:grid-cols-2 gap-4">
+        <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center justify-between"><span className="w-11 h-11 rounded-xl bg-teal-50 text-teal-600 grid place-items-center"><Plane size={22}/></span><span className="text-xs font-black text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full">مفعّل</span></div>
+          <h3 className="text-lg font-black mt-5 mb-1">الحجز اليدوي</h3><p className="text-sm text-slate-500 leading-7 m-0">المزود الافتراضي الحالي. يدعم طلبات الطيران والفنادق والسيارات حتى تفعيل API خارجي.</p>
+        </section>
+        <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center justify-between"><span className="w-11 h-11 rounded-xl bg-sky-50 text-sky-600 grid place-items-center"><Globe2 size={22}/></span><span className={`text-xs font-black px-3 py-1.5 rounded-full ${tp?.enabled ? 'text-emerald-700 bg-emerald-50' : 'text-amber-700 bg-amber-50'}`}>{loading ? 'فحص...' : tp?.enabled ? 'مفعّل' : 'جاهز للتفعيل لاحقًا'}</span></div>
+          <h3 className="text-lg font-black mt-5 mb-1">Travelpayouts</h3><p className="text-sm text-slate-500 leading-7 m-0">{tp?.configured ? 'بيانات التكامل موجودة في الخادم.' : 'لا يوجد API Token حاليًا. لن يتم استخدام أي بيانات تجريبية أو وهمية.'}</p>
+        </section>
       </div>
-      <Separator className="my-6" />
-
-      <Tabs defaultValue="general" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="general" className="flex items-center gap-2">
-            <Globe className="h-4 w-4" /> General
-          </TabsTrigger>
-          <TabsTrigger value="integrations" className="flex items-center gap-2">
-            <Key className="h-4 w-4" /> API Integrations
-          </TabsTrigger>
-          <TabsTrigger value="payment" className="flex items-center gap-2">
-            <CreditCard className="h-4 w-4" /> Payment Gateways
-          </TabsTrigger>
-          <TabsTrigger value="branding" className="flex items-center gap-2">
-            <Building2 className="h-4 w-4" /> Branding
-          </TabsTrigger>
-        </TabsList>
-
-        {/* General Settings */}
-        <TabsContent value="general" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Platform Configuration</CardTitle>
-              <CardDescription>
-                Configure basic platform settings, domains, and contact info.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4">
-                <div className="grid gap-2">
-                  <Label>Platform Name</Label>
-                  <Input 
-                    placeholder="NOVAX TRAVEL" 
-                    defaultValue="NOVAX TRAVEL"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Support Email</Label>
-                  <Input 
-                    placeholder="support@novaxtravel.com" 
-                    defaultValue="support@novaxtravel.com"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Custom Domain</Label>
-                  <div className="flex gap-2">
-                    <Input 
-                      placeholder="www.yourdomain.com" 
-                      defaultValue="www.novaxtravel.com"
-                    />
-                    <Button variant="outline">Verify</Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Enter your custom domain to connect it to the platform.
-                  </p>
-                </div>
-              </div>
-              <div className="flex justify-end mt-4">
-                <Button onClick={() => handleSave('general')} disabled={saving}>
-                  {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Save Changes
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* API Integrations */}
-        <TabsContent value="integrations" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Travel API Providers</CardTitle>
-              <CardDescription>
-                Manage keys and endpoints for flight and hotel providers.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Travelpayouts */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label className="text-base">Travelpayouts</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Primary provider for flights and hotels aggregation.
-                    </p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="grid gap-2 pl-6 border-l-2 border-muted">
-                  <div className="grid gap-1">
-                    <Label>API Token</Label>
-                    <Input type="password" placeholder="Enter your Travelpayouts token" />
-                  </div>
-                  <div className="grid gap-1">
-                    <Label>Marker ID</Label>
-                    <Input placeholder="Enter your Marker ID" />
-                  </div>
-                </div>
-              </div>
-              <Separator />
-              
-              {/* Amadeus */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label className="text-base">Amadeus</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Enterprise flight booking and GDS access.
-                    </p>
-                  </div>
-                  <Switch />
-                </div>
-                <div className="grid gap-2 pl-6 border-l-2 border-muted opacity-50 pointer-events-none">
-                  <div className="grid gap-1">
-                    <Label>API Key</Label>
-                    <Input type="password" placeholder="Enter Amadeus API Key" />
-                  </div>
-                  <div className="grid gap-1">
-                    <Label>API Secret</Label>
-                    <Input type="password" placeholder="Enter Amadeus API Secret" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end mt-4">
-                <Button onClick={() => handleSave('integrations')} disabled={saving}>
-                  {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Save Integration Settings
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Payment Gateways */}
-        <TabsContent value="payment" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Payment Gateways</CardTitle>
-              <CardDescription>
-                Configure Stripe, PayPal, and other payment methods.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label className="text-base">Stripe</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Accept credit cards and global payments.
-                    </p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="grid gap-2 pl-6 border-l-2 border-muted">
-                  <div className="grid gap-1">
-                    <Label>Publishable Key</Label>
-                    <Input placeholder="pk_test_..." />
-                  </div>
-                  <div className="grid gap-1">
-                    <Label>Secret Key</Label>
-                    <Input type="password" placeholder="sk_test_..." />
-                  </div>
-                  <div className="grid gap-1">
-                    <Label>Webhook Secret</Label>
-                    <Input type="password" placeholder="whsec_..." />
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex justify-end mt-4">
-                <Button onClick={() => handleSave('payment')} disabled={saving}>
-                  {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Save Payment Settings
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      <section className="bg-[#071d28] text-white rounded-2xl p-6">
+        <div className="grid sm:grid-cols-3 gap-5">
+          <div className="flex gap-3"><ShieldCheck className="text-teal-400 shrink-0"/><div><strong className="text-sm">الأسرار محمية</strong><p className="text-xs leading-6 text-slate-400 m-0 mt-1">لا تظهر مفاتيح API في لوحة التحكم.</p></div></div>
+          <div className="flex gap-3"><Database className="text-teal-400 shrink-0"/><div><strong className="text-sm">قاعدة البيانات</strong><p className="text-xs leading-6 text-slate-400 m-0 mt-1">الاتصال يدار من الخادم فقط.</p></div></div>
+          <div className="flex gap-3"><KeyRound className="text-teal-400 shrink-0"/><div><strong className="text-sm">التفعيل لاحقًا</strong><p className="text-xs leading-6 text-slate-400 m-0 mt-1">إضافة Token وMarker ثم تفعيل المزود.</p></div></div>
+        </div>
+      </section>
+      <div className="flex items-center gap-2 text-xs text-slate-400"><CheckCircle2 size={15} className="text-teal-600"/>إعدادات الإنتاج الحساسة تُدار عبر Environment Variables فقط.</div>
     </div>
   );
 }
